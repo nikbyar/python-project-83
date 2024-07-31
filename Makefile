@@ -1,3 +1,5 @@
+check: lint test
+
 install:
 	poetry install
 
@@ -17,5 +19,4 @@ test-coverage:
 	pass
 
 
-check:
-	lint test
+
