@@ -8,3 +8,14 @@ dev:
 
 lint:
 	poetry run flake8 page_analyzer
+
+
+test:
+	pass
+
+test-coverage:
+	pass
+
+
+check:
+	lint test
