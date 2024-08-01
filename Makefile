@@ -1,5 +1,3 @@
-#check: lint test
-
 install:
 	poetry install
 
@@ -11,12 +9,6 @@ dev:
 lint:
 	poetry run flake8 page_analyzer
 
-
-#test:
-#	poetry run pytest --cov=app tests/ --cov-report xml
-#
-#test-coverage:
-#	poetry run pytest --cov=app --cov-report xml
 
 PORT ?= 8000
 start:
