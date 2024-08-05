@@ -32,10 +32,10 @@ def add_to_database(url):
                                     INSERT INTO urls (name) VALUES (%s) RETURNING id
                                 """, (url,))
                 conn.commit()
-                return cursor.fetchone()[0]
+                return cursor.fetchone()[0], 'added_successfully'
             else:
                 cursor.execute("SELECT (id) FROM urls WHERE name = (%s)", (url,))
-                return cursor.fetchone()[0]
+                return cursor.fetchone()[0], 'already_exists'
 
 
 def read_from_database(id):
@@ -73,17 +73,23 @@ def get_urls():
     if not url:
         data = read_full_from_database()
         return render_template('urls.html', data=data)
-    if validate_url(url) and len(url) <= 255:
-        url_norm = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-        id = add_to_database(url_norm)
-        flash('Страница успешно добавлена', 'alert-success')
-        return redirect(url_for('get_url', id=id))
-    else:
+    if not validate_url(url) or len(url) > 255:
         flash('Некорректный URL', 'alert-danger')
+        return redirect(url_for('index'))
+
+    url_norm = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+    id, status = add_to_database(url_norm)
+    if status == 'added_successfully':
+        flash('Страница успешно добавлена', 'alert-success')
+    else:
+        flash('Страница уже существует', 'alert-info')
+    return redirect(url_for('get_url', id=id))
+
+
         # flash('Некорректный URL', 'alert-succes')
         # flash('Некорректный URL', 'alert-warning')
         # flash('Некорректный URL', 'alert-info')
-        return redirect(url_for('index'))
+
 
 
 @app.route('/urls/<int:id>')
@@ -94,3 +100,27 @@ def get_url(id):
 
 
 create_table()
+
+
+
+
+
+# def get_urls():
+#     url = request.form.get('url')
+#     if not url:
+#         data = read_full_from_database()
+#         return render_template('urls.html', data=data)
+#     if validate_url(url) and len(url) <= 255:
+#         url_norm = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+#         id, status = add_to_database(url_norm)
+#         if status == 'added_successfully':
+#             flash('Страница успешно добавлена', 'alert-success')
+#         else:
+#             flash('Страница уже существует', 'alert-info')
+#         return redirect(url_for('get_url', id=id))
+#     else:
+#         flash('Некорректный URL', 'alert-danger')
+#         # flash('Некорректный URL', 'alert-succes')
+#         # flash('Некорректный URL', 'alert-warning')
+#         # flash('Некорректный URL', 'alert-info')
+#         return redirect(url_for('index'))
