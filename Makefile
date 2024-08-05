@@ -3,7 +3,7 @@ install:
 
 
 dev:
-	poetry run flask --app page_analyzer/app:app run
+	poetry run flask --app page_analyzer/app:app --debug run
 
 
 lint:
