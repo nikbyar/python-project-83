@@ -17,11 +17,12 @@ def create_table():
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cursor:
             with open('page_analyzer/database.sql', 'r') as f:
+            # with open('database.sql', 'r') as f:
                 cursor.execute(f.read())
                 conn.commit()
 
 
-def add_to_database(url):
+def add_to_urls(url):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cursor:
             cursor.execute("SELECT (name) FROM urls")
@@ -38,28 +39,61 @@ def add_to_database(url):
                 return cursor.fetchone()[0], 'already_exists'
 
 
-def read_from_database(id):
+def read_from_database(table_name, id):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=DictCursor) as cursor:
-            cursor.execute("SELECT * FROM urls WHERE id = (%s)", (id,))
+            query = f"SELECT * FROM {table_name} WHERE id = %s"
+            cursor.execute(query, (id,))
             values = cursor.fetchone()
             column_names = [desc[0] for desc in cursor.description]
+            if not values:
+                values = [[] for i in range(len(column_names))]
             return dict(zip(column_names, values))
 
 
-def read_full_from_database():
+
+def read_full_from_database(table_name, id='all'):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=DictCursor) as cursor:
-            cursor.execute("SELECT * FROM urls")
+            if id == 'all':
+                query = f"SELECT * FROM {table_name}"
+                cursor.execute(query)
+            else:
+                query = f"SELECT * FROM {table_name} WHERE url_id = %s"
+                cursor.execute(query, (id,))
             values = cursor.fetchall()
             column_names = [desc[0] for desc in cursor.description]
             result = [dict(zip(column_names, value)) for value in values[::-1]]
             return result
 
 
-# print(add_to_database('ya11112.ru'))
-# print(add_to_database('ya23.ru'))
-# print(add_to_database('ya11.ru'))
+def add_to_url_checks(url_id):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                                INSERT INTO url_checks (url_id) VALUES (%s)
+                            """, (url_id,))
+            conn.commit()
+
+
+def merge_tables():
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                                SELECT DISTINCT ON (urls.id)
+                                    urls.id, urls.name, 
+                                    checks.status_code, checks.created_at
+                                FROM urls
+                                LEFT JOIN url_checks AS checks ON urls.id = checks.url_id
+            """)
+            conn.commit()
+            values = cursor.fetchall()
+            column_names = [desc[0] for desc in cursor.description]
+            result = [dict(zip(column_names, value)) for value in values]
+            return result
+
+
+
 @app.route('/')
 def index():
     messages = get_flashed_messages(with_categories=True)
@@ -71,14 +105,15 @@ def index():
 def get_urls():
     url = request.form.get('url')
     if not url:
-        data = read_full_from_database()
+        data = merge_tables()
+
         return render_template('urls.html', data=data)
     if not validate_url(url) or len(url) > 255:
         flash('Некорректный URL', 'alert-danger')
         return redirect(url_for('index'))
 
     url_norm = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-    id, status = add_to_database(url_norm)
+    id, status = add_to_urls(url_norm)
     if status == 'added_successfully':
         flash('Страница успешно добавлена', 'alert-success')
     else:
@@ -94,33 +129,39 @@ def get_urls():
 
 @app.route('/urls/<int:id>')
 def get_url(id):
-    url = read_from_database(id)
+    url = read_from_database('urls', id)
     messages = get_flashed_messages(with_categories=True)
-    return render_template('url.html', url=url, messages=messages)
+    checks = read_full_from_database('url_checks', id)
+    return render_template('url.html', url=url, messages=messages, checks=checks)
 
+
+@app.post('/urls/<int:url_id>/checks')
+def check_url(url_id):
+    add_to_url_checks(url_id)
+    flash('Страница успешно проверена', 'alert-success')
+    return redirect(url_for('get_checked_url', url_id=url_id))
+
+
+@app.route('/urls/<int:url_id>/checks')
+def get_checked_url(url_id):
+    checks = read_full_from_database('url_checks', url_id)
+    url = read_from_database('urls', url_id)
+    messages = get_flashed_messages(with_categories=True)
+    return render_template('url.html', url=url, checks=checks, messages=messages)
 
 create_table()
 
 
 
+# print(add_to_urls('ya11112.ru'))
+# print(add_to_urls('ya23.ru'))
+# print(add_to_urls('ya11.ru'))
+# print(read_full_from_database())
+# url_id = 3
+# id = add_to_url_checks(url_id)
+# print(read_from_database(id, 'url_checks'))
 
 
-# def get_urls():
-#     url = request.form.get('url')
-#     if not url:
-#         data = read_full_from_database()
-#         return render_template('urls.html', data=data)
-#     if validate_url(url) and len(url) <= 255:
-#         url_norm = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-#         id, status = add_to_database(url_norm)
-#         if status == 'added_successfully':
-#             flash('Страница успешно добавлена', 'alert-success')
-#         else:
-#             flash('Страница уже существует', 'alert-info')
-#         return redirect(url_for('get_url', id=id))
-#     else:
-#         flash('Некорректный URL', 'alert-danger')
-#         # flash('Некорректный URL', 'alert-succes')
-#         # flash('Некорректный URL', 'alert-warning')
-#         # flash('Некорректный URL', 'alert-info')
-#         return redirect(url_for('index'))
+
+
+

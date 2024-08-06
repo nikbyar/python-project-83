@@ -14,6 +14,10 @@
 {% endfor %}
 {% endif %}
 
+
+ <main class="flex-grow-1">
+    <div class="container-lg mt-3">
+
 <h1>Сайт: {{url.name}}</h1>
 
 
@@ -37,7 +41,7 @@
   </div>
 
     <h2 class="mt-5 mb-3">Проверки</h2>
-    <form method="post" action="/urls/1/checks">
+    <form method="post" action="/urls/{{url.id}}/checks">
     <input type="submit" class="btn btn-primary" value="Запустить проверку">
     </form>
 
@@ -53,9 +57,23 @@
         <th>Дата создания</th>
       </tr>
     </thead>
-      <tbody>
+
+    <tbody>
+      {% for row in checks %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.status_code }}</td>
+            <td>{{ row.h1 }}</td>
+            <td>{{ row.title }}</td>
+            <td>{{ row.description }}</td>
+            <td>{{ row.created_at }}</td>
+        </tr>
+      {% endfor %}
 
     </tbody>
     </table>
   </div>
+
+    </div>
+  </main>
 {% endblock %}

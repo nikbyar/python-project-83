@@ -2,10 +2,12 @@
 
 {% block content %}
 
+<main class="flex-grow-1">
+  <div class="container-lg mt-3">
 
       <h1>Сайты</h1>
 
-<div class="table-responsive">
+    <div class="table-responsive">
   <table class="table table-bordered table-hover text-nowrap" data-test="urls">
     <thead>
     <tr>
@@ -19,12 +21,14 @@
       {% for row in data %}
         <tr>
             <td>{{ row.id }}</td>
-            <td>{{ row.name }}</td>
-            <td>{{ row.last_check }}</td>
-            <td>{{ row.response_code }}</td>
+            <td><a href="/urls/{{row.id}}">{{ row.name }}</a></td>
+            <td>{{ row.created_at or '' }}</td>
+            <td>{{ row.status_code or '' }}</td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+  </div>
+</main>
 {% endblock %}
