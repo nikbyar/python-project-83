@@ -1,10 +1,12 @@
 import psycopg2
 import os
+import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
 from psycopg2.extras import DictCursor
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from validators.url import url as validate_url
+
 
 load_dotenv()
 
@@ -67,12 +69,12 @@ def read_full_from_database(table_name, id='all'):
             return result
 
 
-def add_to_url_checks(url_id):
+def add_to_url_checks(url_id, status_code):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cursor:
             cursor.execute("""
-                                INSERT INTO url_checks (url_id) VALUES (%s)
-                            """, (url_id,))
+                                INSERT INTO url_checks (url_id, status_code) VALUES (%s, %s)
+                            """, (url_id, status_code))
             conn.commit()
 
 
@@ -137,8 +139,19 @@ def get_url(id):
 
 @app.post('/urls/<int:url_id>/checks')
 def check_url(url_id):
-    add_to_url_checks(url_id)
-    flash('Страница успешно проверена', 'alert-success')
+    url = request.form.get('url')
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            add_to_url_checks(url_id, response.status_code)
+            flash('Страница успешно проверена', 'alert-success')
+        else:
+            flash('Произошла ошибка при проверке', 'alert-danger')
+    except requests.RequestException:
+        flash('Произошла ошибка при проверке', 'alert-danger')
+
+
+
     return redirect(url_for('get_checked_url', url_id=url_id))
 
 
