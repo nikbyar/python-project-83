@@ -6,6 +6,7 @@ from psycopg2.extras import DictCursor
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from validators.url import url as validate_url
+from bs4 import BeautifulSoup
 
 
 load_dotenv()
@@ -69,12 +70,14 @@ def read_full_from_database(table_name, id='all'):
             return result
 
 
-def add_to_url_checks(url_id, status_code):
+def add_to_url_checks(url_id, status_code, h1, title, description):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cursor:
             cursor.execute("""
-                                INSERT INTO url_checks (url_id, status_code) VALUES (%s, %s)
-                            """, (url_id, status_code))
+                                INSERT INTO url_checks 
+                                (url_id, status_code, h1, title, description) 
+                                VALUES (%s, %s, %s, %s, %s)
+                            """, (url_id, status_code, h1, title, description))
             conn.commit()
 
 
@@ -94,6 +97,19 @@ def merge_tables():
             result = [dict(zip(column_names, value)) for value in values]
             return result
 
+
+def check_tags(response):
+    html = response.text
+    soup = BeautifulSoup(html, "html.parser")
+
+    h1 = soup.h1.string if soup.h1 else None
+    title = soup.title.string if soup.title else None
+
+    description = None
+    if soup.find('meta', attrs={'name': 'description'}):
+        description = soup.find('meta', attrs={'name': 'description'}).get('content')
+
+    return h1, title, description
 
 
 @app.route('/')
@@ -123,7 +139,7 @@ def get_urls():
     return redirect(url_for('get_url', id=id))
 
 
-        # flash('Некорректный URL', 'alert-succes')
+        # flash('Некорректный URL', 'alert-success')
         # flash('Некорректный URL', 'alert-warning')
         # flash('Некорректный URL', 'alert-info')
 
@@ -143,7 +159,8 @@ def check_url(url_id):
     try:
         response = requests.get(url)
         if response.status_code == 200:
-            add_to_url_checks(url_id, response.status_code)
+            h1, title, description = check_tags(response)
+            add_to_url_checks(url_id, response.status_code, h1, title, description)
             flash('Страница успешно проверена', 'alert-success')
         else:
             flash('Произошла ошибка при проверке', 'alert-danger')

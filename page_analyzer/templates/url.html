@@ -64,9 +64,9 @@
         <tr>
             <td>{{ row.id }}</td>
             <td>{{ row.status_code }}</td>
-            <td>{{ row.h1 }}</td>
-            <td>{{ row.title }}</td>
-            <td>{{ row.description }}</td>
+            <td>{{ row.h1 or '' }}</td>
+            <td>{{ row.title or '' }}</td>
+            <td>{{ row.description or '' }}</td>
             <td>{{ row.created_at }}</td>
         </tr>
       {% endfor %}
