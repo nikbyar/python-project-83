@@ -20,7 +20,7 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 def create_table():
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cursor:
-            with open('page_analyzer/database.sql', 'r') as f:
+            with open('database.sql', 'r') as f:
                 cursor.execute(f.read())
                 conn.commit()
 
