@@ -1,15 +1,17 @@
 import psycopg2
 import os
 import requests
-from flask import render_template, request, redirect, \
+from flask import Flask, render_template, request, redirect, \
     url_for, flash, get_flashed_messages
 from psycopg2.extras import DictCursor
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from validators.url import url as validate_url
 from bs4 import BeautifulSoup
-from . import app
 
+
+
+app = Flask(__name__)
 
 load_dotenv()
 
