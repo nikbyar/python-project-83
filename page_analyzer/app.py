@@ -10,7 +10,6 @@ from validators.url import url as validate_url
 from bs4 import BeautifulSoup
 
 
-
 app = Flask(__name__)
 
 load_dotenv()
@@ -131,7 +130,6 @@ def get_urls():
         return render_template('urls.html', data=data)
     if not validate_url(url) or len(url) > 255:
         flash('Некорректный URL', 'alert-danger')
-        # return redirect(url_for('index')), 422
         messages = get_flashed_messages(with_categories=True)
         return render_template('index.html', messages=messages), 422
 
