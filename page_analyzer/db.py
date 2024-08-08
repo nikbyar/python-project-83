@@ -2,8 +2,10 @@ import os
 import psycopg2
 from psycopg2.extras import DictCursor
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 # from .app import app
 
+load_dotenv()
 
 # # current_app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
 # DATABASE_URL = current_app.config['DATABASE_URL']
