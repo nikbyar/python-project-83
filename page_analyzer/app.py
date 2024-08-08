@@ -179,4 +179,4 @@ def get_checked_url(url_id):
                            messages=messages)
 
 
-create_table()
+# create_table()
