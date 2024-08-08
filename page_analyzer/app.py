@@ -131,7 +131,9 @@ def get_urls():
         return render_template('urls.html', data=data)
     if not validate_url(url) or len(url) > 255:
         flash('Некорректный URL', 'alert-danger')
-        return redirect(url_for('index'))
+        # return redirect(url_for('index')), 422
+        messages = get_flashed_messages(with_categories=True)
+        return render_template('index.html', messages=messages), 422
 
     url_norm = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
     id, status = add_to_urls(url_norm)
@@ -177,7 +179,6 @@ def get_checked_url(url_id):
     messages = get_flashed_messages(with_categories=True)
     return render_template('url.html', url=url, checks=checks,
                            messages=messages)
-
 
 
 create_table()
